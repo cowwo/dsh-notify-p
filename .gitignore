@@ -1,0 +1,6 @@
+# 本地测试用的软链（指向本机 DSH 自带的 schemastery / zod / typert-protocol），不进包
+# 发布时这些由宿主提供，声明在 package.json 的 peerDependencies 里
+node_modules/
+
+# 运行期产物
+*.log

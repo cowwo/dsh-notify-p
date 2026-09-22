@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write   # 需要写权限才能创建 GitHub Release
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # 本包零运行时依赖、无构建步骤，发布路径不需要 node_modules。
+      # 单测依赖宿主提供的 schemastery / zod，CI 里装不到，因此只在本地跑
+      # （npm test，116 个用例全绿），此处不做测试门禁。
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      # 1. 发布裸名版 dsh-notify-p（让别人用短名装）
+      - name: Publish dsh-notify-p
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 2. 临时把包名改成 @cowwo 的 scoped 版再发一次
+      #    两个包版本历史各自独立，靠同一次 run 同一版本号绑在一起。
+      - name: Publish @cowwo/dsh-notify-p
+        run: |
+          npm pkg set name=@cowwo/dsh-notify-p
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 3. 自动创建 GitHub Release 版本页（写进安装命令）
+      - name: Create GitHub Release
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## 安装
+
+          ```sh
+          dsh plugin --profile web add dsh-notify-p
+          ```
+
+          也可用 scoped 名：`@cowwo/dsh-notify-p`。
+
+          - 会话干完活 / 出错 / 卡住 / 等你审批时，发一封邮件到你邮箱
+          - 正文写清是哪个会话（标题 + 工作区 + 用时 + 会话 ID），并附一条可点击直达该会话的链接
+          - SMTP 与 Resend 两种通道；连续多轮只提醒一次，并发时全局限流，子代理默认不打扰
+          - 设置页：邮件通知（配好了吗 / 能发出去吗，改完即时生效）
+          EOF
+          gh release create ${GITHUB_REF_NAME} --title "${GITHUB_REF_NAME}" --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

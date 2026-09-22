@@ -1,0 +1,11 @@
+# dsh-notify-p bundle patch: inserts the plugin row into the profile roster.
+#
+# 安装（profile 用 pnpm 管依赖，别手改 node_modules，会被回滚）：
+#   dsh plugin --profile web add file:/root/test/12000012_dsh通知/dsh-mail-notify
+#
+# 本行 config 是"组合层默认值"（settings 的 base 层），留空即全部走 schema 默认。
+# 真正给用户改的开关在 设置 → 插件 → 插件配置 → 邮件通知 卡片里，
+# 落盘到 $DSH_HOME/settings.yaml 的 dsh-notify-p 段。
+- insert:
+    - id: mail-notify
+      name: 'dsh-notify-p'
