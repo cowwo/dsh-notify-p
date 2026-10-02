@@ -400,11 +400,11 @@ test('Remote：返回值必须能通过清单里声明的严格 schema', async (
   const remote = remoteOf(harness);
 
   const testResult = await remote.config.test();
-  const parsed = byMethod.get('test').result.schema.safeParse(testResult);
+  const parsed = byMethod.get('test').result.create().safeParse(testResult);
   assert.equal(parsed.success, true, `test 结果不符合清单 schema：${JSON.stringify(parsed.error?.issues ?? [])}`);
 
   const stateResult = remote.config.state();
-  const parsedState = byMethod.get('state').result.schema.safeParse(stateResult);
+  const parsedState = byMethod.get('state').result.create().safeParse(stateResult);
   assert.equal(parsedState.success, true, `state 结果不符合清单 schema：${JSON.stringify(parsedState.error?.issues ?? [])}`);
 });
 
@@ -417,9 +417,12 @@ test('Remote：清单本身要过 typert-loader 的那几道校验，且与包�
   assert.equal(Array.isArray(TYPERT.schemas), true);
   assert.equal(pkg.exports['./typert'], './lib/typert.host.js', 'dsh-typert-loader 靠这个导出发现清单');
 
-  // schema 必须是 zod v4 实例（loader 会检查 `_zod`）
+  // codec 必须是 strict + create() 工厂，且 create() 返回 zod v4 实例
+  // （0.2.x 起裸 schema 字段已失效：loader 只认 create）
   for (const item of TYPERT.invocations) {
-    assert.equal('_zod' in item.result.schema, true, `${item.method} 的 schema 不是 zod v4 实例`);
+    assert.equal(item.result.mode, 'strict', `${item.method} 的 codec 必须是 strict`);
+    assert.equal(typeof item.result.create, 'function', `${item.method} 的 codec 缺 create() 工厂`);
+    assert.equal('_zod' in item.result.create(), true, `${item.method} 的 create() 没有返回 zod v4 实例`);
     assert.equal(item.service, 'mailNotify');
     assert.equal(item.namespace, 'mailNotify');
     assert.equal(item.invocation.kind, 'direct');
