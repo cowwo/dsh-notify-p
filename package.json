@@ -1,6 +1,6 @@
 {
   "name": "dsh-notify-p",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH 邮件通知：会话干完活 / 出错 / 卡住 / 等你审批时发一封邮件，正文写清是哪个会话，并附一条可点击直达该会话的链接。Email notification plugin for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
